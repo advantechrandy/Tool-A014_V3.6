@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEATSINK TERMINAL V3.6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --machinery-gray: #1a1c1e;
+            --panel-border: #3a3f44;
+            --caution-yellow: #facc15;
+            --display-cyan: #22d3ee;
+            --execute-green: #22c55e;
+            --metal-gradient: linear-gradient(180deg, #2d3339 0%, #1a1c1e 100%);
+        }
+
+        body {
+            background-color: #0f1113;
+            color: #d1d5db;
+            font-family: 'JetBrains Mono', monospace;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .industrial-border {
+            border: 2px solid var(--panel-border);
+            position: relative;
+            background: var(--metal-gradient);
+        }
+
+        .industrial-border::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: repeating-linear-gradient(45deg, var(--caution-yellow), var(--caution-yellow) 10px, #000 10px, #000 20px);
+            opacity: 0.8;
+            z-index: 10;
+        }
+
+        .section-tag {
+            font-family: 'Orbitron', sans-serif;
+            @apply text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-sm mb-4 inline-block tracking-widest font-bold border-l-2 border-cyan-500;
+        }
+
+        .input-machine {
+            background: #000;
+            border: 1px solid #4a5568;
+            color: var(--display-cyan);
+            box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.05);
+            height: 38px;
+            @apply w-full px-3 rounded-sm transition-all focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 outline-none font-bold text-sm appearance-none;
+        }
+
+        .input-readonly {
+            @apply bg-slate-900 border-slate-700 text-slate-500 cursor-not-allowed;
+        }
+
+        select.input-machine {
+            cursor: pointer;
+            @apply pr-3;
+        }
+
+        select.input-machine option {
+            background-color: #1a1c1e;
+            color: var(--display-cyan);
+        }
+
+        .field-label {
+            @apply text-[11px] text-slate-400 font-bold mb-1.5 flex justify-between items-center w-full;
+        }
+
+        .unit-label {
+            @apply text-[9px] text-slate-600 bg-black px-1 rounded border border-slate-800 ml-2;
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .data-box {
+            background: #05070a;
+            border-left: 4px solid var(--display-cyan);
+            @apply p-5 relative overflow-hidden;
+        }
+
+        .lcd-text {
+            font-family: 'JetBrains Mono', monospace;
+            text-shadow: 0 0 15px rgba(34, 211, 238, 0.6);
+        }
+
+        .rivet {
+            @apply w-2 h-2 rounded-full bg-slate-700 shadow-inner absolute opacity-40;
+        }
+
+        .btn-execution-pod {
+            background: #000;
+            border: 1px solid #334155;
+            @apply p-1.5 rounded-sm relative overflow-hidden flex items-center gap-1 transition-all cursor-pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        @keyframes glow-pulse {
+            0% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.2), 0 4px 15px rgba(0,0,0,0.5); border-color: #334155; }
+            50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6), 0 4px 15px rgba(0,0,0,0.5); border-color: #22c55e; }
+            100% { box-shadow: 0 0 5px rgba(34, 197, 94, 0.2), 0 4px 15px rgba(0,0,0,0.5); border-color: #334155; }
+        }
+
+        .btn-execution-pod.ready-pulse {
+            animation: glow-pulse 2s infinite ease-in-out;
+        }
+
+        .btn-trigger {
+            background: linear-gradient(180deg, #334155 0%, #0f172a 100%);
+            border: 1px solid #475569;
+            box-shadow: 0 4px 0 0 #020617, inset 0 1px 1px rgba(255,255,255,0.1);
+            @apply flex-grow h-12 flex items-center justify-center rounded-sm text-slate-400 font-black text-xs tracking-[0.2em] transition-all;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+        }
+
+        .status-led-module {
+            @apply flex flex-col items-center justify-center px-3 border-r border-slate-800 shrink-0;
+        }
+
+        .led-dot {
+            @apply w-2.5 h-2.5 rounded-full transition-all duration-300;
+            background: #1e293b;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .led-dot.ready { 
+            background: #166534; 
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.8), inset 0 0 2px white; 
+        }
+        
+        .scanning-bar {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--display-cyan);
+            box-shadow: 0 0 15px var(--display-cyan);
+            animation: scan 2s linear infinite;
+            display: none;
+            z-index: 20;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        #visualizer_container {
+            background: #000;
+            border: 1px solid #1e293b;
+            @apply rounded-sm relative flex items-center justify-center overflow-hidden;
+            aspect-ratio: 16 / 10;
+        }
+
+        .dim-line { stroke: #64748b; stroke-width: 1; }
+        .dim-text { fill: #94a3b8; font-size: 11px; font-weight: bold; font-family: 'JetBrains Mono'; text-anchor: middle; }
+        .dim-line-pitch { stroke: #22d3ee; stroke-width: 1; }
+        .dim-text-pitch { fill: #22d3ee; font-size: 10px; font-weight: bold; font-family: 'JetBrains Mono'; text-anchor: middle; }
+
+        .results-section {
+            @apply mt-14 pt-10 relative;
+        }
+        
+        .industrial-divider {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            height: 1px;
+            background: #334155;
+            @apply flex justify-center items-center;
+        }
+        
+        .industrial-divider::after {
+            content: "";
+            @apply absolute bg-slate-900 px-3 text-[8px] font-bold text-slate-500 tracking-[0.4em] uppercase;
+            border: 1px solid #334155;
+            top: -6px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 lg:p-12">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="mb-10 flex flex-col md:flex-row justify-between items-end border-b-4 border-slate-800 pb-6 gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-4 h-10 bg-cyan-500"></div>
+                    <h1 class="text-3xl md:text-4xl font-black italic tracking-tighter text-white font-['Orbitron']">
+                        HEATSINK <span class="text-cyan-500">TERMINAL V3.6</span>
+                    </h1>
+                </div>
+                <p class="text-slate-500 text-xs font-bold tracking-[0.3em]">Spreading Resistance Analysis // Created by Randy Chen</p>
+            </div>
+            <div class="text-right font-bold text-[10px] text-slate-600">
+                <p>STATUS: <span id="status_text" class="text-green-500">SYSTEM_READY</span></p>
+                <p>CORE_V: 3.6.0-ADVANCED_MODELING</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- 左側：參數輸入區 -->
+            <div class="lg:col-span-8 space-y-8 flex flex-col">
+                <div class="industrial-border p-6 md:p-10 rounded-sm overflow-hidden flex-grow">
+                    <div id="scanner" class="scanning-bar"></div>
+                    <div class="rivet top-2 left-2"></div>
+                    <div class="rivet top-2 right-2"></div>
+                    <div class="rivet bottom-2 left-2"></div>
+                    <div class="rivet bottom-2 right-2"></div>
+
+                    <div class="space-y-10">
+                        <!-- Section 01: Geometry -->
+                        <section>
+                            <span class="section-tag">01 GEOMETRY & SCHEMATIC (mm)</span>
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                <div class="params-grid">
+                                    <div class="input-container">
+                                        <label class="field-label">Heat sink長度 L</label>
+                                        <input type="number" id="length" class="input-machine" value="80" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label">Heat sink寬度 W</label>
+                                        <input type="number" id="width" class="input-machine" value="80" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label">Base厚度 T</label>
+                                        <input type="number" id="base_thick" class="input-machine" value="4" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label">鰭片高度 H</label>
+                                        <input type="number" id="fin_height" class="input-machine" value="30" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label">鰭片厚度 t</label>
+                                        <input type="number" id="fin_thick" class="input-machine" value="1.5" step="0.1" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label">鰭片數量 N <span class="unit-label">(pcs)</span></label>
+                                        <input type="number" id="fin_count" class="input-machine" value="15" oninput="updateVisualizer()">
+                                    </div>
+                                    <div class="input-container">
+                                        <label class="field-label text-cyan-500">鰭片間距 Pitch (s)</label>
+                                        <input type="text" id="res_pitch_calc" class="input-machine input-readonly" value="--" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div id="visualizer_container">
+                                    <div class="absolute top-2 left-2 text-[8px] text-slate-700 font-bold uppercase tracking-widest">LIVE_SCHEMATIC_VIEW</div>
+                                    <svg id="schematic_svg" width="100%" height="100%" viewBox="0 0 400 240"></svg>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Section 02: Heat Source -->
+                        <section class="pt-6 border-t border-slate-800">
+                            <span class="section-tag text-yellow-500 border-yellow-500">02 HEAT SOURCE & SPREADING</span>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="input-container">
+                                    <label class="field-label text-yellow-500">熱源長度 (mm)</label>
+                                    <input type="number" id="source_l" class="input-machine !border-yellow-900" value="20">
+                                </div>
+                                <div class="input-container">
+                                    <label class="field-label text-yellow-500">熱源寬度 (mm)</label>
+                                    <input type="number" id="source_w" class="input-machine !border-yellow-900" value="20">
+                                </div>
+                                <div class="input-container">
+                                    <label class="field-label">安裝方位</label>
+                                    <select id="orientation" class="input-machine" onchange="updateVisualizer()">
+                                        <option value="vertical">垂直放置 (Vertical)</option>
+                                        <option value="horizontal">水平放置 (Horizontal)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Section 03 & 04 -->
+                        <section class="pt-6 border-t border-slate-700">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div>
+                                    <span class="section-tag">03 MATERIAL & AMBIENT</span>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="input-container col-span-2">
+                                            <label class="field-label">HS材料</label>
+                                            <select id="k_heatsink" class="input-machine">
+                                                <option value="180">AL-6061 (180 W/mK)</option>
+                                                <option value="390">CU (390 W/mK)</option>
+                                                <option value="80">AL-ADC12 (80 W/mK)</option>
+                                            </select>
+                                        </div>
+                                        <div class="input-container">
+                                            <label class="field-label">HS輻射率 ε</label>
+                                            <input type="number" id="emissivity" class="input-machine" value="0.85" step="0.05">
+                                        </div>
+                                        <div class="input-container">
+                                            <label class="field-label">HS環溫 Ta (°C)</label>
+                                            <input type="number" id="t_ambient" class="input-machine" value="25">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="section-tag text-cyan-500 border-cyan-500">04 POWER & INTERFACE</span>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="input-container col-span-2">
+                                            <label class="field-label text-cyan-400">總發熱功率 P (W)</label>
+                                            <input type="number" id="power" class="input-machine !border-cyan-500/50 text-xl" value="30">
+                                        </div>
+                                        <div class="input-container">
+                                            <label class="field-label">TIM K值 (W/mK)</label>
+                                            <input type="number" id="k_pad" class="input-machine" value="4.0" step="0.1">
+                                        </div>
+                                        <div class="input-container">
+                                            <label class="field-label">TIM 厚度 (mm)</label>
+                                            <input type="number" id="t_pad" class="input-machine" value="0.1" step="0.05">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：監測與執行區 -->
+            <div class="lg:col-span-4 space-y-6 flex flex-col">
+                <div class="industrial-border p-6 rounded-sm bg-slate-900 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-2">
+                        <span class="text-xs font-black italic text-slate-500 tracking-widest">CONTROL CENTER</span>
+                        <div id="pulse_tag" class="px-2 py-0.5 bg-slate-800 text-slate-500 text-[8px] border border-slate-700 font-bold">STANDBY</div>
+                    </div>
+
+                    <div class="px-1">
+                        <div id="execution_pod" class="btn-execution-pod ready-pulse" onclick="runAnalysis()">
+                            <div class="status-led-module">
+                                <div id="led_main" class="led-dot ready"></div>
+                            </div>
+                            <div class="btn-trigger">
+                                EXECUTE ANALYSIS
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="results-section space-y-6">
+                        <div class="industrial-divider"></div>
+                        
+                        <div class="data-box">
+                            <p class="text-[10px] text-cyan-500 font-bold uppercase mb-2 tracking-widest">發熱源 T-Case</p>
+                            <div class="flex items-baseline gap-2">
+                                <span id="res_t_case" class="text-7xl font-black lcd-text text-cyan-400 leading-none">--</span>
+                                <span class="text-3xl font-bold text-cyan-700 italic">°C</span>
+                            </div>
+                            <div class="mt-6 h-2 bg-black w-full overflow-hidden border border-slate-800">
+                                <div id="temp_bar" class="h-full bg-cyan-500 transition-all duration-700" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="flex justify-between items-center p-3 bg-black/60 border border-slate-800">
+                                <span class="text-[10px] text-slate-500 font-bold uppercase">Total熱阻_Case to Ambient</span>
+                                <span id="res_r_total" class="text-lg font-bold text-yellow-500 lcd-text">--</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-slate-800/10 rounded border border-slate-800 text-[10px] space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">擴散熱阻 (Spreading)</span>
+                                <span id="res_r_spread" class="text-yellow-600 font-bold">--</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500">TIM 介面熱阻</span>
+                                <span id="res_r_pad" class="text-slate-300">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="industrial-border p-4 bg-black rounded-sm border-slate-800 flex-grow min-h-[140px]">
+                    <div class="text-[9px] text-slate-600 mb-2 font-black tracking-widest uppercase border-b border-slate-900 pb-1 flex justify-between">
+                        System Diagnostics
+                        <span class="animate-pulse">●</span>
+                    </div>
+                    <div id="log_content" class="text-[10px] text-green-700/80 space-y-1 font-mono leading-tight">
+                        >> BOOTING_SEQUENCER...<br>
+                        >> SYSTEM_AWAITING_INPUT...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 阻擋右鍵功能 ---
+        document.addEventListener('contextmenu', function(event) {
+            event.preventDefault();
+        });
+
+        function createDimLine(svg, x1, y1, x2, y2, label, labelPos = 'outside', isPitch = false) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1); line.setAttribute("y1", y1);
+            line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+            line.classList.add(isPitch ? "dim-line-pitch" : "dim-line");
+            g.appendChild(line);
+
+            const tickSize = 3;
+            [ [x1, y1], [x2, y2] ].forEach(pt => {
+                const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                if (x1 === x2) {
+                    tick.setAttribute("x1", pt[0]-tickSize); tick.setAttribute("y1", pt[1]);
+                    tick.setAttribute("x2", pt[0]+tickSize); tick.setAttribute("y2", pt[1]);
+                } else {
+                    tick.setAttribute("x1", pt[0]); tick.setAttribute("y1", pt[1]-tickSize);
+                    tick.setAttribute("x2", pt[0]); tick.setAttribute("y2", pt[1]+tickSize);
+                }
+                tick.classList.add(isPitch ? "dim-line-pitch" : "dim-line");
+                g.appendChild(tick);
+            });
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            text.classList.add(isPitch ? "dim-text-pitch" : "dim-text");
+            
+            if (x1 === x2) {
+                const xOffset = labelPos === 'outside_right' ? 14 : -14;
+                text.setAttribute("x", x1 + xOffset);
+                text.setAttribute("y", midY + 4);
+                text.style.textAnchor = labelPos === 'outside_right' ? "start" : "end";
+            } else {
+                text.setAttribute("x", midX);
+                text.setAttribute("y", label.startsWith('W') ? y1 + 16 : y1 - 8);
+            }
+            text.textContent = label;
+            g.appendChild(text);
+            svg.appendChild(g);
+        }
+
+        function updateVisualizer() {
+            const svg = document.getElementById('schematic_svg');
+            if(!svg) return;
+
+            const W = parseFloat(document.getElementById('width').value) || 80;
+            const H = parseFloat(document.getElementById('fin_height').value) || 30;
+            const tb = parseFloat(document.getElementById('base_thick').value) || 4;
+            const tf = parseFloat(document.getElementById('fin_thick').value) || 1.5;
+            const N = parseInt(document.getElementById('fin_count').value) || 15;
+
+            let pitch = 0;
+            if (N > 1) {
+                pitch = (W - (N * tf)) / (N - 1);
+            }
+            document.getElementById('res_pitch_calc').value = N > 1 ? pitch.toFixed(2) + " mm" : "N/A";
+
+            svg.innerHTML = '';
+            
+            const marginX = 60, marginY = 40; 
+            const canvasW = 400, canvasH = 240; 
+            const drawAreaW = canvasW - (marginX * 2);
+            const drawAreaH = canvasH - (marginY * 2);
+            
+            const scale = Math.min(drawAreaW / W, drawAreaH / (H + tb));
+            const sW = W * scale;
+            const sH = H * scale;
+            const sTb = tb * scale;
+            const sTf = tf * scale;
+            
+            const startX = (canvasW - sW) / 2;
+            const startY = (canvasH + (sH + sTb)) / 2 - 25; 
+
+            const totalFinThick = tf * N;
+            const isOverlap = totalFinThick > W;
+
+            // Base
+            const baseRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            baseRect.setAttribute("x", startX); 
+            baseRect.setAttribute("y", startY - sTb);
+            baseRect.setAttribute("width", sW); 
+            baseRect.setAttribute("height", sTb);
+            baseRect.setAttribute("fill", "#334155"); 
+            baseRect.setAttribute("stroke", isOverlap ? "#ef4444" : "#64748b");
+            svg.appendChild(baseRect);
+
+            // Fins
+            if (N >= 2 && !isOverlap) {
+                const sSpacing = (sW - (N * sTf)) / (N - 1);
+                for (let i = 0; i < N; i++) {
+                    const finX = startX + i * (sTf + sSpacing);
+                    const finRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                    finRect.setAttribute("x", finX); 
+                    finRect.setAttribute("y", startY - sTb - sH);
+                    finRect.setAttribute("width", sTf); 
+                    finRect.setAttribute("height", sH);
+                    finRect.setAttribute("fill", "#475569"); 
+                    finRect.setAttribute("stroke", "#64748b");
+                    svg.appendChild(finRect);
+
+                    if (i === 0 && N > 1) {
+                        const pitchLabelY = startY - sTb - sH - 20;
+                        createDimLine(svg, finX + sTf, pitchLabelY, finX + sTf + sSpacing, pitchLabelY, `s=${pitch.toFixed(1)}`, 'outside', true);
+                        [finX + sTf, finX + sTf + sSpacing].forEach(vX => {
+                            const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                            vLine.setAttribute("x1", vX); vLine.setAttribute("y1", pitchLabelY);
+                            vLine.setAttribute("x2", vX); vLine.setAttribute("y2", startY - sTb - sH);
+                            vLine.setAttribute("stroke", "#22d3ee"); vLine.setAttribute("stroke-width", "0.5");
+                            vLine.setAttribute("stroke-dasharray", "2,2"); vLine.setAttribute("opacity", "0.5");
+                            svg.appendChild(vLine);
+                        });
+                    }
+                }
+            }
+
+            const widthDimY = startY + 25; 
+            createDimLine(svg, startX, widthDimY, startX + sW, widthDimY, `W=${W}`);
+            
+            [startX, startX + sW].forEach(vX => {
+                const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                vLine.setAttribute("x1", vX); vLine.setAttribute("y1", startY);
+                vLine.setAttribute("x2", vX); vLine.setAttribute("y2", widthDimY);
+                vLine.setAttribute("stroke", "#64748b"); vLine.setAttribute("stroke-width", "0.5");
+                vLine.setAttribute("stroke-dasharray", "2,2"); vLine.setAttribute("opacity", "0.5");
+                svg.appendChild(vLine);
+            });
+
+            createDimLine(svg, startX - 25, startY - sTb - sH, startX - 25, startY, `H+T`, 'outside');
+            createDimLine(svg, startX + sW + 15, startY - sTb, startX + sW + 15, startY, `T=${tb}`, 'outside_right');
+        }
+
+        function runAnalysis() {
+            const pod = document.getElementById('execution_pod');
+            const scanner = document.getElementById('scanner');
+            const status = document.getElementById('status_text');
+            const pulse = document.getElementById('pulse_tag');
+            
+            if (pod.classList.contains('running')) return;
+
+            pod.classList.add('running');
+            pod.classList.remove('ready-pulse'); 
+            pod.classList.remove('complete');
+            scanner.style.display = 'block';
+            status.innerText = "SIMULATING_THERMAL_SPREAD...";
+            status.className = "text-yellow-500";
+            pulse.innerText = "CALCULATING";
+            
+            setTimeout(() => {
+                calculate();
+                pod.classList.remove('running');
+                pod.classList.add('complete');
+                scanner.style.display = 'none';
+                status.innerText = "ANALYSIS_COMPLETE";
+                status.className = "text-green-500";
+                pulse.innerText = "ACTIVE";
+                
+                setTimeout(() => {
+                    pod.classList.remove('complete');
+                    pod.classList.add('ready-pulse');
+                    status.innerText = "SYSTEM_READY";
+                }, 3000);
+            }, 1200);
+        }
+
+        function calcSpreadingResistance(As, Ab, t, k, h_eff) {
+            const epsilon = Math.sqrt(As / Ab); 
+            const tau = t / Math.sqrt(Ab / Math.PI); 
+            const Bi = (h_eff * Math.sqrt(Ab / Math.PI)) / k; 
+            const lambda = Math.PI * (1 - epsilon);
+            const phi = (lambda + Bi * Math.tanh(lambda * tau)) / (Bi + lambda * Math.tanh(lambda * tau));
+            return Math.max(0, (1 - epsilon) * phi / (k * Math.sqrt(As * Math.PI)));
+        }
+
+        function calculate() {
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                return el ? parseFloat(el.value) : 0;
+            };
+
+            const L = getVal('length') / 1000;
+            const W = getVal('width') / 1000;
+            const tb = getVal('base_thick') / 1000;
+            const H = getVal('fin_height') / 1000;
+            const tf = getVal('fin_thick') / 1000;
+            const N = parseInt(document.getElementById('fin_count').value) || 0;
+            const k_hs = getVal('k_heatsink');
+            const eps = getVal('emissivity');
+            const orient = document.getElementById('orientation').value;
+            const Ta = getVal('t_ambient');
+            const Q = getVal('power');
+            const k_pad = getVal('k_pad');
+            const t_pad = getVal('t_pad') / 1000;
+            const sl = getVal('source_l') / 1000;
+            const sw = getVal('source_w') / 1000;
+            const log = document.getElementById('log_content');
+            
+            if ((tf * N) >= (W)) {
+                log.innerHTML = "<span class='text-red-500'>>> ERR: FIN_TOTAL_WIDTH_EXCEEDS_W</span>";
+                resetResults();
+                return;
+            }
+
+            const s = (W - N * tf) / (Math.max(1, N - 1));
+            const base_area = L * W;
+            const source_area = sl * sw;
+            const fin_area = (2 * H * L * N) + (tf * L * N);
+            const exposed_base = (N - 1) * s * L;
+            
+            const g = 9.81, beta = 1 / (Ta + 273.15), nu = 1.7e-5, k_air = 0.0267, Pr = 0.71, sigma = 5.6703e-8;
+            let L_char = (orient === 'vertical') ? H : (base_area / (2 * (L + W)));
+            
+            let Ts = Ta + 30; 
+            let R_sink_conv = 0;
+            let h_total = 0;
+
+            for(let i=0; i<40; i++) {
+                let dT = Math.max(0.1, Ts - Ta);
+                let Ra = (g * beta * dT * Math.pow(L_char, 3) * Pr) / Math.pow(nu, 2);
+                let Nu_val;
+                if (orient === 'vertical') {
+                    Nu_val = 0.68 + (0.67 * Math.pow(Ra, 0.25)) / Math.pow(1 + Math.pow(0.492/Pr, 9/16), 4/9);
+                    let Ra_s = (g * beta * dT * Math.pow(s, 4) * Pr) / (Math.pow(nu, 2) * H);
+                    Nu_val = Math.min(Nu_val, (Ra_s / 24) * Math.pow(1 - Math.exp(-35 / Ra_s), 0.75) * (H/s));
+                } else {
+                    Nu_val = 0.54 * Math.pow(Ra, 0.25) * 0.4; 
+                }
+                let h_conv = (Nu_val * k_air) / L_char;
+                let h_rad = eps * sigma * (Math.pow(Ts + 273.15, 4) - Math.pow(Ta + 273.15, 4)) / dT;
+                h_total = h_conv + h_rad;
+                let m = Math.sqrt((h_total * 2 * (L + tf)) / (k_hs * tf * L));
+                let eta_f = Math.tanh(m * H) / (Math.max(0.001, m * H));
+                R_sink_conv = 1 / (h_total * (exposed_base + eta_f * fin_area));
+                let next_Ts = Ta + Q * R_sink_conv;
+                if (Math.abs(next_Ts - Ts) < 0.01) break;
+                Ts = next_Ts;
+            }
+
+            const R_pad = t_pad / (k_pad * source_area);
+            const R_base_cond = tb / (k_hs * base_area);
+            const h_eff = 1 / (R_sink_conv * base_area);
+            const R_spread = calcSpreadingResistance(source_area, base_area, tb, k_hs, h_eff);
+            const R_total = R_pad + R_spread + R_base_cond + R_sink_conv;
+            const T_case = Ta + Q * R_total;
+
+            document.getElementById('res_t_case').innerText = T_case.toFixed(1);
+            document.getElementById('res_r_total').innerText = R_total.toFixed(3) + " K/W";
+            document.getElementById('res_r_spread').innerText = R_spread.toFixed(3) + " K/W";
+            document.getElementById('res_r_pad').innerText = R_pad.toFixed(3) + " K/W";
+
+            const percentage = Math.min(100, Math.max(0, (T_case - Ta) / (100 - Ta) * 100));
+            const bar = document.getElementById('temp_bar');
+            bar.style.width = percentage + "%";
+            bar.style.backgroundColor = T_case > 85 ? '#ef4444' : (T_case > 65 ? '#f59e0b' : '#22d3ee');
+            log.innerHTML = `<div class="text-yellow-500">>> SPREADING_EFFECT_ACTIVE</div><div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 opacity-70"><span>> SOURCE_RATIO:</span> <span>${(source_area/base_area*100).toFixed(1)}%</span><span>> BIOT_NUM:</span> <span>${((h_total * tb)/k_hs).toExponential(2)}</span></div>`;
+        }
+
+        function resetResults() {
+            ['res_t_case', 'res_r_total', 'res_r_spread', 'res_r_pad'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.innerText = "--";
+            });
+            document.getElementById('temp_bar').style.width = "0%";
+        }
+
+        window.onload = () => {
+            updateVisualizer();
+            calculate();
+        };
+    </script>
+</body>
+</html>
